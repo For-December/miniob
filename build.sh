@@ -9,7 +9,7 @@ CMAKE_COMMAND="cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 --log-level=STATUS"
 
 ALL_ARGS=("$@")
 BUILD_ARGS=()
-MAKE_ARGS=(-j $CPU_CORES)
+MAKE_ARGS=(-j 2)
 MAKE=make
 
 echo "$0 ${ALL_ARGS[@]}"
@@ -82,7 +82,7 @@ function do_init
     mkdir -p build && \
     cd build && \
     ${CMAKE_COMMAND} .. -DEVENT__DISABLE_OPENSSL=ON -DEVENT__LIBRARY_TYPE=BOTH && \
-    ${MAKE_COMMAND} -j4 && \
+    ${MAKE_COMMAND} -j2 && \
     make install
 
   # build googletest
@@ -90,7 +90,7 @@ function do_init
     mkdir -p build && \
     cd build && \
     ${CMAKE_COMMAND} .. && \
-    ${MAKE_COMMAND} -j4 && \
+    ${MAKE_COMMAND} -j2 && \
     ${MAKE_COMMAND} install
 
   # build google benchmark
@@ -98,7 +98,7 @@ function do_init
     mkdir -p build && \
     cd build && \
     ${CMAKE_COMMAND} .. -DBENCHMARK_ENABLE_TESTING=OFF  -DBENCHMARK_INSTALL_DOCS=OFF -DBENCHMARK_ENABLE_GTEST_TESTS=OFF -DBENCHMARK_USE_BUNDLED_GTEST=OFF -DBENCHMARK_ENABLE_ASSEMBLY_TESTS=OFF && \
-    ${MAKE_COMMAND} -j4 && \
+    ${MAKE_COMMAND} -j2 && \
     ${MAKE_COMMAND} install
 
   # build jsoncpp
