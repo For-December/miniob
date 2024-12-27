@@ -58,6 +58,10 @@ RC UpdateStmt::create(Db *db, const UpdateSqlNode &update, Stmt *&stmt)
     {
       if(field.type() == update.value.attr_type())
       {
+        if(field.type() == CHARS && field.len() < update.value.length())
+        {
+            return RC::INVALID_ARGUMENT;
+        }
         valid = true;
         update_field = field;
         break;
