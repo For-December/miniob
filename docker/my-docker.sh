@@ -1,0 +1,1 @@
+docker run -d --name miniob-dev -p 10001:22 --privileged -v $PWD/miniob:/root/miniob oceanbase/miniob
