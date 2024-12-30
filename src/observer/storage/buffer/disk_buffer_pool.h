@@ -313,9 +313,7 @@ public:
 
   RC flush_page(Frame &frame);
 
-  // 删除表删除文件
   RC remove_file(const char *file_name);
-
 
 public:
   static void set_instance(BufferPoolManager *bpm); // TODO 优化全局变量的表示方法

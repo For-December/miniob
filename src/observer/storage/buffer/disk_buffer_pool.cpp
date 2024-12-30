@@ -775,7 +775,7 @@ RC BufferPoolManager::remove_file(const char *file_name)
   }
   else
   {
-    if( 0 != std::remove(file_name))
+    if( 0 != ::remove(file_name))
     {
       LOG_WARN("remove file fail. file name=%s, errno = %s", file_name,strerror(errno));
       ret = RC::FILE_REMOVE;
