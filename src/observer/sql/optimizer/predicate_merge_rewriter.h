@@ -8,17 +8,24 @@ EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
 MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 See the Mulan PSL v2 for more details. */
 
-//
-// Created by wangyunlai.wyl on 2021/5/19.
-//
+#pragma once
 
-#include "storage/index/index.h"
+#include <vector>
+#include "sql/optimizer/rewrite_rule.h"
 
-RC Index::init(const IndexMeta &index_meta, const std::vector<const FieldMeta*> &field_metas)
+/**
+ * @brief 将父子关系的谓词合并成一个
+ * @ingroup Rewriter
+ * @details 使得能够用其他规则
+ */
+class PredicateMergeRewriter : public RewriteRule 
 {
-  index_meta_ = index_meta;
-  for (const FieldMeta *field_meta : field_metas) {
-    field_metas_.emplace_back(*field_meta);
-  }
-  return RC::SUCCESS;
-}
+public:
+  PredicateMergeRewriter() = default;
+  virtual ~PredicateMergeRewriter() = default;
+
+  RC rewrite(std::unique_ptr<LogicalOperator> &oper, bool &change_made) override;
+
+private:
+  RC merge(std::unique_ptr<Expression>& source, std::unique_ptr<Expression>& target);
+};
