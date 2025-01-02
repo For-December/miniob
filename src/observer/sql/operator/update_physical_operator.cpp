@@ -26,7 +26,7 @@ RC UpdatePhysicalOperator::open(Trx *trx)
   }
 
   std::unique_ptr<PhysicalOperator> &child = children_[0];
-  RC                                 rc    = child->open(trx);
+  RC rc = child->open(trx);
   if (rc != RC::SUCCESS) {
     LOG_WARN("failed to open child operator: %s", strrc(rc));
     return rc;
@@ -54,28 +54,28 @@ RC UpdatePhysicalOperator::next()
 
     // 这里的record.data直接指向frame
     RowTuple *row_tuple = static_cast<RowTuple *>(tuple);
-    Record   &record    = row_tuple->record();
+    Record &record = row_tuple->record();
 
     // 如果更新前后record不变，则跳过这一行
     RC rc2 = RC::SUCCESS;
     if (RC::SUCCESS != (rc2 = extract_old_value(record))) {
-      if (RC::RECORD_DUPLICATE_KEY == rc2) {
+      if (RC::RECORD_DUPLICATE_KEY == rc2) { 
         continue;
-      } else {
-        return rc2;
+      } else { 
+        return rc2; 
       }
     }
 
     // 接口内部只保证当前record更新的原子性
-    rc = table_->update_record(record, fields_, values_);  // 这里暂时没管事务，之后需要修改
+    rc = table_->update_record(record, fields_, values_);    //这里暂时没管事务，之后需要修改
     if (rc != RC::SUCCESS) {
       // 更新失败，需要回滚之前成功的record
       LOG_WARN("failed to update record: %s", strrc(rc));
       // old_records中最后一条记录是刚才更新失败的，不需要回滚
       for (size_t i = old_records_.size() - 2; i >= 0; i--) {
-        RC                   rc2 = RC::SUCCESS;
-        Record               updated_record;
-        std::vector<Value *> old_row_values;
+        RC rc2 = RC::SUCCESS;
+        Record updated_record;
+        std::vector<Value*> old_row_values;
         for (size_t j = 0; j < old_values_[i].size(); j++) {
           old_row_values.emplace_back(&old_values_[i][j]);
         }
@@ -94,17 +94,17 @@ RC UpdatePhysicalOperator::next()
 
 RC UpdatePhysicalOperator::extract_old_value(Record &record)
 {
-  RC        rc             = RC::SUCCESS;
+  RC rc = RC::SUCCESS;
   int       field_offset   = -1;
   int       field_length   = -1;
   int       field_index    = -1;
-  bool      same_data      = true;  // 标识当前行数据更新后，是否与更前相同
+  bool      same_data      = true;    // 标识当前行数据更新后，是否与更前相同
   const int sys_field_num  = table_->table_meta().sys_field_num();
   const int user_field_num = table_->table_meta().field_num() - sys_field_num;
 
   std::vector<Value> old_value;
   for (size_t c_idx = 0; c_idx < fields_.size(); c_idx++) {
-    Value       *value     = values_[c_idx];
+    Value *value = values_[c_idx];
     std::string &attr_name = fields_[c_idx];
 
     // 1.先找到要更新的列
@@ -130,7 +130,7 @@ RC UpdatePhysicalOperator::extract_old_value(Record &record)
       }
       field_offset = field_meta->offset();
       field_length = field_meta->len();
-      field_index  = i + sys_field_num;
+      field_index = i + sys_field_num;
       old_value.emplace_back(attr_type, record.data() + field_offset, field_length);
       break;
     }
@@ -140,8 +140,8 @@ RC UpdatePhysicalOperator::extract_old_value(Record &record)
     }
 
     // 判断 新值与旧值是否相等
-    const FieldMeta *null_field = table_->table_meta().null_field();
-    common::Bitmap   old_null_bitmap(record.data() + null_field->offset(), table_->table_meta().field_num());
+    const FieldMeta* null_field = table_->table_meta().null_field();
+    common::Bitmap old_null_bitmap(record.data() + null_field->offset(), table_->table_meta().field_num());
     if (same_data) {
       if (value->is_null() && old_null_bitmap.get_bit(field_index)) {
         // both null, same data, do noting
