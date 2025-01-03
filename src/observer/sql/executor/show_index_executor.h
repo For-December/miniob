@@ -21,23 +21,24 @@ class SQLStageEvent;
 class ShowIndexExecutor
 {
 public:
-  ShowIndexExecutor() = default;
+  ShowIndexExecutor()          = default;
   virtual ~ShowIndexExecutor() = default;
 
   RC execute(SQLStageEvent *sql_event)
   {
-    RC rc = RC::SUCCESS;
-    Stmt *stmt = sql_event->stmt();
+    RC       rc      = RC::SUCCESS;
+    Stmt    *stmt    = sql_event->stmt();
     Session *session = sql_event->session_event()->session();
-    ASSERT(stmt->type() == StmtType::SHOW_INDEX, 
-          "show index executor can not run this command: %d", static_cast<int>(stmt->type()));
+    ASSERT(stmt->type() == StmtType::SHOW_INDEX,
+        "show index executor can not run this command: %d",
+        static_cast<int>(stmt->type()));
 
-    Db *db = session->get_current_db();
+    Db        *db         = session->get_current_db();
     SqlResult *sql_result = sql_event->session_event()->sql_result();
 
     ShowIndexStmt *show_index_stmt = static_cast<ShowIndexStmt *>(stmt);
-    const char *table_name = show_index_stmt->table_name().c_str();    
-    Table *table = db->find_table(table_name);
+    const char    *table_name      = show_index_stmt->table_name().c_str();
+    Table         *table           = db->find_table(table_name);
     if (nullptr != table) {
       // 设置表头
       TupleSchema tuple_schema;
@@ -49,15 +50,15 @@ public:
       sql_result->set_tuple_schema(tuple_schema);
 
       // TODO: 唯一索引、多列索引等情况
-      auto oper = new StringListPhysicalOperator;
+      auto                 oper    = new StringListPhysicalOperator;
       std::vector<Index *> indexes = table->indexes();
       for (size_t i = 0; i < indexes.size(); i++) {
         for (size_t j = 1; j < indexes[i]->index_meta().field().size(); j++) {
-          oper->append({table->name(),                      // Table
-                        indexes[i]->index_meta().unique() ? "0" :"1",  // Unique
-                        indexes[i]->index_meta().name(),    // Key_name
-                        to_string(j),                     // Seq_in_index
-                        indexes[i]->index_meta().field().at(j)}); // Column_name
+          oper->append({table->name(),                        // Table
+              indexes[i]->index_meta().unique() ? "0" : "1",  // Unique
+              indexes[i]->index_meta().name(),                // Key_name
+              to_string(j),                                   // Seq_in_index
+              indexes[i]->index_meta().field().at(j)});       // Column_name
         }
       }
       sql_result->set_operator(std::unique_ptr<PhysicalOperator>(oper));
