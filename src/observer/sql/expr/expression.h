@@ -34,7 +34,7 @@ class Tuple;
  * @brief 表达式类型
  * @ingroup Expression
  */
-enum class ExprType 
+enum class ExprType
 {
   NONE,
   STAR,         ///< 星号，表示所有字段
@@ -57,10 +57,10 @@ enum class ExprType
  * 才能计算出来真实的值。但是有些表达式可能就表示某一个固定的
  * 值，比如ValueExpr。
  */
-class Expression 
+class Expression
 {
 public:
-  Expression() = default;
+  Expression()          = default;
   virtual ~Expression() = default;
 
   /**
@@ -72,10 +72,7 @@ public:
    * @brief 在没有实际运行的情况下，也就是无法获取tuple的情况下，尝试获取表达式的值
    * @details 有些表达式的值是固定的，比如ValueExpr，这种情况下可以直接获取值
    */
-  virtual RC try_get_value(Value &value) const
-  {
-    return RC::UNIMPLENMENT;
-  }
+  virtual RC try_get_value(Value &value) const { return RC::UNIMPLENMENT; }
 
   /**
    * @brief 表达式的类型
@@ -93,39 +90,43 @@ public:
    * @brief 检查 FieldExpr
    * @details 在生成 SelectStmt 的时候调用
    */
-  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) {
-      return RC::SUCCESS;
-    }
+  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables,
+      Db *db, Table *default_table = nullptr)
+  {
+    return RC::SUCCESS;
+  }
 
   /**
    * @brief 检查是否能下推
-   * @details 在生成 SelectStmt 的时候调用，如果当前表达式树中存在一个 FieldExpr 的 table name 不在 table_map 中就返回 false
+   * @details 在生成 SelectStmt 的时候调用，如果当前表达式树中存在一个 FieldExpr 的 table name 不在 table_map 中就返回
+   * false
    */
-  virtual bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) {
-    return true;
-  }
+  virtual bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) { return true; }
 
   /**
    * @brief 表达式的名字，比如是字段名称，或者用户在执行SQL语句时输入的内容
    */
   virtual std::string name() const { return name_; }
-  virtual void set_name(std::string name) { name_ = name; }
+  virtual void        set_name(std::string name) { name_ = name; }
 
 private:
-  std::string  name_;
+  std::string name_;
 };
 
 /**
  * @brief 字段表达式
  * @ingroup Expression
  */
-class FieldExpr : public Expression 
+class FieldExpr : public Expression
 {
 public:
   FieldExpr() = default;
-  FieldExpr(const std::string& table_name, const std::string& field_name) : table_name_(table_name), field_name_(field_name) {}
-  FieldExpr(const Table *table, const FieldMeta *field) : field_(table, field), table_name_(table->name()), field_name_(field->name()) {}
+  FieldExpr(const std::string &table_name, const std::string &field_name)
+      : table_name_(table_name), field_name_(field_name)
+  {}
+  FieldExpr(const Table *table, const FieldMeta *field)
+      : field_(table, field), table_name_(table->name()), field_name_(field->name())
+  {}
   FieldExpr(const Field &field) : field_(field), table_name_(field.table_name()), field_name_(field.field_name()) {}
 
   virtual ~FieldExpr() = default;
@@ -141,19 +142,21 @@ public:
 
   const char *field_name() const { return field_.field_name(); }
 
-  const std::string & get_table_name() const { return table_name_; }
-  const std::string & get_field_name() const { return field_name_; }
-  
+  const std::string &get_table_name() const { return table_name_; }
+  const std::string &get_field_name() const { return field_name_; }
+
   RC get_value(const Tuple &tuple, Value &value) const override;
 
-  RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) override;
+  RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables, Db *db,
+      Table *default_table = nullptr) override;
 
-  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override {
+  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override
+  {
     return table_map.count(table_name_) != 0;
   }
+
 private:
-  Field field_;
+  Field             field_;
   const std::string table_name_;
   const std::string field_name_;
 };
@@ -162,17 +165,20 @@ private:
  * @brief 常量值表达式
  * @ingroup Expression
  */
-class ValueExpr : public Expression 
+class ValueExpr : public Expression
 {
 public:
   ValueExpr() = default;
-  explicit ValueExpr(const Value &value) : value_(value)
-  {}
+  explicit ValueExpr(const Value &value) : value_(value) {}
 
   virtual ~ValueExpr() = default;
 
   RC get_value(const Tuple &tuple, Value &value) const override;
-  RC try_get_value(Value &value) const override { value = value_; return RC::SUCCESS; }
+  RC try_get_value(Value &value) const override
+  {
+    value = value_;
+    return RC::SUCCESS;
+  }
 
   ExprType type() const override { return ExprType::VALUE; }
 
@@ -180,30 +186,29 @@ public:
 
   void get_value(Value &value) const { value = value_; }
 
-  void set_value(Value &value) {value_ = value;}
+  void         set_value(Value &value) { value_ = value; }
   const Value &get_value() const { return value_; }
 
   bool get_neg(Value &value)
   {
-    switch (value_.attr_type())
-    {
-    case INTS:{
+    switch (value_.attr_type()) {
+      case INTS: {
         value.set_int(-1 * value_.get_int());
         return true;
-    }break;
-    case FLOATS:{
+      } break;
+      case FLOATS: {
         value.set_float(-1 * value_.get_float());
         return true;
-    }break;
-    case DOUBLES:{
+      } break;
+      case DOUBLES: {
         value.set_double(-1 * value_.get_double());
         return true;
-    }break;
-    default:
-      break;
+      } break;
+      default: break;
     }
     return false;
   }
+
 private:
   Value value_;
 };
@@ -212,17 +217,14 @@ private:
  * @brief 类型转换表达式
  * @ingroup Expression
  */
-class CastExpr : public Expression 
+class CastExpr : public Expression
 {
 public:
   CastExpr(std::unique_ptr<Expression> child, AttrType cast_type);
   virtual ~CastExpr();
 
-  ExprType type() const override
-  {
-    return ExprType::CAST;
-  }
-  RC get_value(const Tuple &tuple, Value &value) const override;
+  ExprType type() const override { return ExprType::CAST; }
+  RC       get_value(const Tuple &tuple, Value &value) const override;
 
   RC try_get_value(Value &value) const override;
 
@@ -230,11 +232,13 @@ public:
 
   std::unique_ptr<Expression> &child() { return child_; }
 
-  RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) override {
-      return child_->check_field(table_map, tables, db, default_table);
-    }
-  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override {
+  RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables, Db *db,
+      Table *default_table = nullptr) override
+  {
+    return child_->check_field(table_map, tables, db, default_table);
+  }
+  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override
+  {
     return child_->check_can_push_down(table_map);
   }
 
@@ -242,15 +246,15 @@ private:
   RC cast(const Value &value, Value &cast_value) const;
 
 private:
-  std::unique_ptr<Expression> child_;  ///< 从这个表达式转换
-  AttrType cast_type_;  ///< 想要转换成这个类型
+  std::unique_ptr<Expression> child_;      ///< 从这个表达式转换
+  AttrType                    cast_type_;  ///< 想要转换成这个类型
 };
 
 /**
  * @brief 比较表达式
  * @ingroup Expression
  */
-class ComparisonExpr : public Expression 
+class ComparisonExpr : public Expression
 {
 public:
   ComparisonExpr(CompOp comp, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right);
@@ -264,7 +268,7 @@ public:
 
   CompOp comp() const { return comp_; }
 
-  std::unique_ptr<Expression> &left()  { return left_;  }
+  std::unique_ptr<Expression> &left() { return left_; }
   std::unique_ptr<Expression> &right() { return right_; }
 
   /**
@@ -279,22 +283,24 @@ public:
    */
   RC compare_value(const Value &left, const Value &right, bool &value) const;
 
-  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) override {
-      if (RC rc = left_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
-        return rc;
-      } else if (rc = right_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
-        return rc;
-      }
-      return RC::SUCCESS;
+  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables,
+      Db *db, Table *default_table = nullptr) override
+  {
+    if (RC rc = left_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
+      return rc;
+    } else if (rc = right_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
+      return rc;
     }
+    return RC::SUCCESS;
+  }
 
-  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override {
+  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override
+  {
     return left_->check_can_push_down(table_map) && right_->check_can_push_down(table_map);
   }
 
 private:
-  CompOp comp_;
+  CompOp                      comp_;
   std::unique_ptr<Expression> left_;
   std::unique_ptr<Expression> right_;
 };
@@ -305,10 +311,11 @@ private:
  * 多个表达式使用同一种关系(AND或OR)来联结
  * 当前miniob仅有AND操作
  */
-class ConjunctionExpr : public Expression 
+class ConjunctionExpr : public Expression
 {
 public:
-  enum class Type {
+  enum class Type
+  {
     AND,
     OR,
   };
@@ -327,18 +334,20 @@ public:
 
   std::vector<std::unique_ptr<Expression>> &children() { return children_; }
 
-  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) override {
-      for (auto& expr : children_) {
-        if (RC rc = expr->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
-          return rc;
-        }
+  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables,
+      Db *db, Table *default_table = nullptr) override
+  {
+    for (auto &expr : children_) {
+      if (RC rc = expr->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
+        return rc;
       }
-      return RC::SUCCESS;
     }
+    return RC::SUCCESS;
+  }
 
-  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override {
-    for (auto& expr : children_) {
+  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override
+  {
+    for (auto &expr : children_) {
       if (!expr->check_can_push_down(table_map)) {
         return false;
       }
@@ -347,7 +356,7 @@ public:
   }
 
 private:
-  Type conjunction_type_;
+  Type                                     conjunction_type_;
   std::vector<std::unique_ptr<Expression>> children_;
 };
 
@@ -355,10 +364,11 @@ private:
  * @brief 算术表达式
  * @ingroup Expression
  */
-class ArithmeticExpr : public Expression 
+class ArithmeticExpr : public Expression
 {
 public:
-  enum class Type {
+  enum class Type
+  {
     ADD,
     SUB,
     MUL,
@@ -383,22 +393,24 @@ public:
   std::unique_ptr<Expression> &left() { return left_; }
   std::unique_ptr<Expression> &right() { return right_; }
 
-  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map,
-    const std::vector<Table *> &tables, Db *db, Table* default_table = nullptr) override {
-      RC rc = RC::SUCCESS;
-      if (rc = left_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
+  virtual RC check_field(const std::unordered_map<std::string, Table *> &table_map, const std::vector<Table *> &tables,
+      Db *db, Table *default_table = nullptr) override
+  {
+    RC rc = RC::SUCCESS;
+    if (rc = left_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
+      return rc;
+    }
+    if (arithmetic_type_ != Type::NEGATIVE) {
+      ASSERT(right_, "ERROR!");
+      if (rc = right_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
         return rc;
       }
-      if (arithmetic_type_ != Type::NEGATIVE) {
-        ASSERT(right_, "ERROR!");
-        if (rc = right_->check_field(table_map, tables, db, default_table); rc != RC::SUCCESS) {
-          return rc;
-        }
-      }
-      return RC::SUCCESS;
     }
+    return RC::SUCCESS;
+  }
 
-  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override {
+  bool check_can_push_down(const std::unordered_map<std::string, Table *> &table_map) override
+  {
     if (!left_->check_can_push_down(table_map)) {
       return false;
     }
@@ -411,27 +423,27 @@ public:
 
 private:
   RC calc_value(const Value &left_value, const Value &right_value, Value &value) const;
-  
+
 private:
-  Type arithmetic_type_;
+  Type                        arithmetic_type_;
   std::unique_ptr<Expression> left_;
   std::unique_ptr<Expression> right_;
 };
 
-static bool exp2value(Expression * exp,Value & value)
+static bool exp2value(Expression *exp, Value &value)
 {
-  if(exp->type() == ExprType::VALUE) {
-    ValueExpr *tmp = static_cast<ValueExpr*>(exp);
-    value = tmp->get_value();
+  if (exp->type() == ExprType::VALUE) {
+    ValueExpr *tmp = static_cast<ValueExpr *>(exp);
+    value          = tmp->get_value();
     return true;
   }
-  if(exp->type() == ExprType::ARITHMETIC) {
-    ArithmeticExpr * tmp = static_cast<ArithmeticExpr *>(exp);
-    if(tmp->arithmetic_type() != ArithmeticExpr::Type::NEGATIVE && tmp->left()->type() != ExprType::VALUE) {
+  if (exp->type() == ExprType::ARITHMETIC) {
+    ArithmeticExpr *tmp = static_cast<ArithmeticExpr *>(exp);
+    if (tmp->arithmetic_type() != ArithmeticExpr::Type::NEGATIVE && tmp->left()->type() != ExprType::VALUE) {
       return false;
     }
-    ValueExpr *lhs = static_cast<ValueExpr*>(tmp->left().get());
-    if( ! lhs->get_neg(value) ) {
+    ValueExpr *lhs = static_cast<ValueExpr *>(tmp->left().get());
+    if (!lhs->get_neg(value)) {
       LOG_WARN("get_neg error!");
       return false;
     }
