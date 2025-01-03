@@ -33,59 +33,49 @@ class Table;
  * @brief 表示select语句
  * @ingroup Statement
  */
-class SelectStmt : public Stmt 
+class SelectStmt : public Stmt
 {
 public:
-  class JoinTables {
+  class JoinTables
+  {
   public:
-    JoinTables() = default;
+    JoinTables()  = default;
     ~JoinTables() = default;
-    JoinTables(JoinTables&& other) {
+    JoinTables(JoinTables &&other)
+    {
       join_tables_.swap(other.join_tables_);
       on_conds_.swap(other.on_conds_);
     }
-    void push_join_table(Table* table, FilterStmt* fu) {
+    void push_join_table(Table *table, FilterStmt *fu)
+    {
       join_tables_.emplace_back(table);
       on_conds_.emplace_back(fu);
     }
-    const std::vector<Table*>& join_tables() const {
-      return join_tables_;
-    }
-    const std::vector<FilterStmt*>& on_conds() const {
-      return on_conds_;
-    }
+    const std::vector<Table *>      &join_tables() const { return join_tables_; }
+    const std::vector<FilterStmt *> &on_conds() const { return on_conds_; }
+
   private:
-    std::vector<Table*> join_tables_;
-    std::vector<FilterStmt*> on_conds_;
+    std::vector<Table *>      join_tables_;
+    std::vector<FilterStmt *> on_conds_;
   };
+
 public:
   SelectStmt() = default;
   ~SelectStmt() override;
 
-  StmtType type() const override
-  {
-    return StmtType::SELECT;
-  }
+  StmtType type() const override { return StmtType::SELECT; }
 
 public:
   // select_sql.project exprs would be clear
   static RC create(Db *db, SelectSqlNode &select_sql, Stmt *&stmt);
 
 public:
-  const std::vector<JoinTables> &join_tables() const
-  {
-    return join_tables_;
-  }
-  FilterStmt *filter_stmt() const
-  {
-    return filter_stmt_;
-  }
-  std::vector<std::unique_ptr<Expression>> &projects()
-  {
-    return projects_;
-  }
+  const std::vector<JoinTables>            &join_tables() const { return join_tables_; }
+  FilterStmt                               *filter_stmt() const { return filter_stmt_; }
+  std::vector<std::unique_ptr<Expression>> &projects() { return projects_; }
+
 private:
   std::vector<std::unique_ptr<Expression>> projects_;
-  std::vector<JoinTables> join_tables_;
-  FilterStmt *filter_stmt_ = nullptr;
+  std::vector<JoinTables>                  join_tables_;
+  FilterStmt                              *filter_stmt_ = nullptr;
 };
