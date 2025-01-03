@@ -153,8 +153,8 @@ RC Table::open(const char *meta_file, const char *base_dir)
 
   const int index_num = table_meta_.index_num();
   for (int i = 0; i < index_num; i++) {
-    const IndexMeta *index_meta = table_meta_.index(i);
-    std::vector<const FieldMeta *> field_metas;
+    const IndexMeta                *index_meta = table_meta_.index(i);
+    std::vector<const FieldMeta *>  field_metas;
     const std::vector<std::string> &field_names = index_meta->field();
     for (size_t j = 0; j < field_names.size(); i++) {
       const FieldMeta *field_meta = table_meta_.field(field_names[j].c_str());
@@ -168,7 +168,7 @@ RC Table::open(const char *meta_file, const char *base_dir)
         return RC::INTERNAL;
       }
       field_metas.emplace_back(field_meta);
-    }    
+    }
 
     BplusTreeIndex *index      = new BplusTreeIndex();
     std::string     index_file = table_index_file(base_dir, name(), index_meta->name());
@@ -226,8 +226,8 @@ RC Table::insert_records(std::vector<Record> &records)
   // 回滚前 num 个插入
   auto rollback = [this, &records](int num) {
     for (int i = 0; i < num; ++i) {
-      Record& record = records[i];
-      RC rc2 = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
+      Record &record = records[i];
+      RC      rc2    = delete_entry_of_indexes(record.data(), record.rid(), false /*error_on_not_exists*/);
       if (rc2 != RC::SUCCESS) {
         LOG_ERROR("Failed to rollback index data when insert index entries failed. table name=%s, rc=%d:%s",
             name(),
@@ -246,8 +246,8 @@ RC Table::insert_records(std::vector<Record> &records)
 
   int idx = 0;
   while (idx < records.size()) {
-    Record& record = records[idx];
-    rc    = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
+    Record &record = records[idx];
+    rc             = record_handler_->insert_record(record.data(), table_meta_.record_size(), &record.rid());
     if (rc != RC::SUCCESS) {
       rollback(idx);
       LOG_ERROR("Insert record failed. table name=%s, rc=%s", table_meta_.name(), strrc(rc));
@@ -361,19 +361,19 @@ RC Table::make_record(int value_num, const Value *values, Record &record)
   char *record_data = (char *)malloc(record_size);
 
   // null field
-  const FieldMeta* null_field = table_meta_.null_field();
-  common::Bitmap null_bitmap(record_data + null_field->offset(), table_meta_.field_num());
+  const FieldMeta *null_field = table_meta_.null_field();
+  common::Bitmap   null_bitmap(record_data + null_field->offset(), table_meta_.field_num());
   null_bitmap.clear_bits();
 
   for (int i = 0; i < value_num; i++) {
-    const FieldMeta *field    = table_meta_.field(i + normal_field_start_index);
-    const Value     &value    = values[i];
+    const FieldMeta *field = table_meta_.field(i + normal_field_start_index);
+    const Value     &value = values[i];
     if (value.is_null()) {
       // null 值的 data 部分的数据是未定义的
       null_bitmap.set_bit(normal_field_start_index + i);
       continue;
     }
-    size_t           copy_len = field->len();
+    size_t copy_len = field->len();
     if (field->type() == CHARS) {
       const size_t data_len = value.length();
       if (copy_len > data_len) {
@@ -420,7 +420,7 @@ RC Table::get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly
   return rc;
 }
 
-RC Table::create_index(Trx *trx, bool unique, const std::vector<const FieldMeta*> &field_metas, const char *index_name)
+RC Table::create_index(Trx *trx, bool unique, const std::vector<const FieldMeta *> &field_metas, const char *index_name)
 {
   if (common::is_blank(index_name) || field_metas.empty()) {
     LOG_INFO("Invalid input arguments, table name is %s, index_name is blank or attribute_name is blank", name());
@@ -428,7 +428,7 @@ RC Table::create_index(Trx *trx, bool unique, const std::vector<const FieldMeta*
   }
 
   IndexMeta new_index_meta;
-  RC rc = new_index_meta.init(index_name, unique, field_metas);
+  RC        rc = new_index_meta.init(index_name, unique, field_metas);
   if (rc != RC::SUCCESS) {
     std::string field_names = field_metas[0]->name();
     for (int i = 0; i < field_metas.size(); i++) {
@@ -444,7 +444,7 @@ RC Table::create_index(Trx *trx, bool unique, const std::vector<const FieldMeta*
   std::vector<int> field_ids;
   for (size_t i = 0; i < field_metas.size(); i++) {
     const FieldMeta *field_meta = field_metas[i];
-    int field_id = 0;
+    int              field_id   = 0;
     for (FieldMeta field : *table_meta_.field_metas()) {
       if (0 == strcmp(field.name(), field_meta->name())) {
         field_ids.emplace_back(field_id);
@@ -461,9 +461,9 @@ RC Table::create_index(Trx *trx, bool unique, const std::vector<const FieldMeta*
   }
 
   // 创建索引相关数据
-  BplusTreeIndex *index = new BplusTreeIndex();
-  std::string index_file = table_index_file(base_dir_.c_str(), name(), index_name);
-  rc = index->create(index_file.c_str(), unique, new_index_meta, field_ids, field_metas);
+  BplusTreeIndex *index      = new BplusTreeIndex();
+  std::string     index_file = table_index_file(base_dir_.c_str(), name(), index_name);
+  rc                         = index->create(index_file.c_str(), unique, new_index_meta, field_ids, field_metas);
   if (rc != RC::SUCCESS) {
     delete index;
     LOG_ERROR("Failed to create bplus tree index. file name=%s, rc=%d:%s", index_file.c_str(), rc, strrc(rc));
@@ -566,8 +566,8 @@ RC Table::insert_entry_of_indexes(const char *record, const RID &rid)
   RC rc = RC::SUCCESS;
   for (size_t i = 0; i < indexes_.size(); i++) {
     Index *index = indexes_[i];
-    rc = index->insert_entry(record, &rid);
-  
+    rc           = index->insert_entry(record, &rid);
+
     // 插入失败的时候，回滚已经成功的索引
     if (rc != RC::SUCCESS) {
       RC rc2 = RC::SUCCESS;
@@ -644,14 +644,14 @@ RC Table::sync()
 
 RC Table::update_record(Record &record, const char *attr_name, Value *value)
 {
-  std::vector<Value*> values;
+  std::vector<Value *> values;
   values.emplace_back(value);
   std::vector<std::string> attr_names;
   attr_names.emplace_back(attr_name);
   return update_record(record, attr_names, values);
 }
 
-RC Table::update_record(Record &record, const std::vector<std::string> &attr_names, const std::vector<Value*> &values)
+RC Table::update_record(Record &record, const std::vector<std::string> &attr_names, const std::vector<Value *> &values)
 {
   RC rc = RC::SUCCESS;
   if (attr_names.size() != values.size() || 0 == attr_names.size()) {
@@ -668,8 +668,8 @@ RC Table::update_record(Record &record, const std::vector<std::string> &attr_nam
 
   char *old_data = record.data();                        // old_data不能释放，其指向的是frame中的内存
   char *data     = new char[table_meta_.record_size()];  // new_record->data
-  DEFER([&](){
-    delete [] data;
+  DEFER([&]() {
+    delete[] data;
     data = nullptr;
     record.set_data(old_data);
   });
@@ -677,7 +677,7 @@ RC Table::update_record(Record &record, const std::vector<std::string> &attr_nam
   memcpy(data, old_data, table_meta_.record_size());
 
   for (size_t c_idx = 0; c_idx < attr_names.size(); c_idx++) {
-    Value *value = values[c_idx];
+    Value             *value     = values[c_idx];
     const std::string &attr_name = attr_names[c_idx];
 
     // 1.先找到要更新的列
@@ -703,7 +703,7 @@ RC Table::update_record(Record &record, const std::vector<std::string> &attr_nam
       }
       field_offset = field_meta->offset();
       field_length = field_meta->len();
-      field_index = i + sys_field_num;
+      field_index  = i + sys_field_num;
       break;
     }
     if (field_length < 0 || field_offset < 0) {
@@ -712,13 +712,13 @@ RC Table::update_record(Record &record, const std::vector<std::string> &attr_nam
     }
 
     // 写入新的值
-    const FieldMeta* null_field = table_meta_.null_field();
-    common::Bitmap new_null_bitmap(data + null_field->offset(), table_meta_.field_num());
+    const FieldMeta *null_field = table_meta_.null_field();
+    common::Bitmap   new_null_bitmap(data + null_field->offset(), table_meta_.field_num());
     if (value->is_null()) {
       new_null_bitmap.set_bit(field_index);
     } else {
       new_null_bitmap.clear_bit(field_index);
-      memcpy(data + field_offset, value->data(), field_length);   
+      memcpy(data + field_offset, value->data(), field_length);
     }
   }
   record.set_data(data);  // 谁来管理old_data呢？
@@ -765,13 +765,13 @@ RC Table::update_record(Record &record, const std::vector<std::string> &attr_nam
 */
 RC Table::drop(const char *dir)
 {
-  // 1.drop index first
+  // 1. drop index first
   RC rc = RC::SUCCESS;
   if ((rc = sync()) != RC::SUCCESS) {
     LOG_WARN("Failed to sync table %s to disk.", name());
   } else {
     std::string meta_file = ::table_meta_file(dir, name());
-    // 1.drop  meta file and index file
+    // 1. drop  meta file and index file
     if (0 != ::unlink(meta_file.c_str())) {
       LOG_WARN("unable to delete %s meta file", name());
       rc = RC::DELETE_FILE_ERROR;

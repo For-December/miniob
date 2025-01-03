@@ -31,9 +31,9 @@ class Trx;
 
 /**
  * @brief 表
- * 
+ *
  */
-class Table 
+class Table
 {
 public:
   Table() = default;
@@ -47,12 +47,8 @@ public:
    * @param attribute_count 字段个数
    * @param attributes 字段
    */
-  RC create(int32_t table_id, 
-            const char *path, 
-            const char *name, 
-            const char *base_dir, 
-            int attribute_count, 
-            const AttrInfoSqlNode attributes[]);
+  RC create(int32_t table_id, const char *path, const char *name, const char *base_dir, int attribute_count,
+      const AttrInfoSqlNode attributes[]);
 
   /**
    * 打开一个表
@@ -81,31 +77,25 @@ public:
   RC visit_record(const RID &rid, bool readonly, std::function<void(Record &)> visitor);
   RC get_record(const RID &rid, Record &record);
 
-  //将该record的attr_name列更新为 value
-  RC update_record(Record &record, const char* attr_name, Value *value);
-  RC update_record(Record &record, const std::vector<std::string> &attr_names, const std::vector<Value*> &values);
-  
+  // 将该record的attr_name列更新为 value
+  RC update_record(Record &record, const char *attr_name, Value *value);
+  RC update_record(Record &record, const std::vector<std::string> &attr_names, const std::vector<Value *> &values);
+
   RC recover_insert_record(Record &record);
 
   // TODO refactor
-  RC create_index(Trx *trx, bool unique, const std::vector<const FieldMeta*> &field_metas, const char *index_name);
+  RC create_index(Trx *trx, bool unique, const std::vector<const FieldMeta *> &field_metas, const char *index_name);
 
   RC get_record_scanner(RecordFileScanner &scanner, Trx *trx, bool readonly);
 
-  RecordFileHandler *record_handler() const
-  {
-    return record_handler_;
-  }
+  RecordFileHandler *record_handler() const { return record_handler_; }
 
 public:
-  int32_t table_id() const { return table_meta_.table_id(); }
+  int32_t     table_id() const { return table_meta_.table_id(); }
   const char *name() const;
 
-  const TableMeta &table_meta() const;
-  const std::vector<Index *> &indexes() const
-  {
-    return indexes_;
-  }
+  const TableMeta            &table_meta() const;
+  const std::vector<Index *> &indexes() const { return indexes_; }
 
   RC sync();
   RC drop(const char *dir);
@@ -114,20 +104,18 @@ private:
   RC insert_entry_of_indexes(const char *record, const RID &rid);
   RC delete_entry_of_indexes(const char *record, const RID &rid, bool error_on_not_exists);
 
-
-
 private:
   RC init_record_handler(const char *base_dir);
 
 public:
   Index *find_index(const char *index_name) const;
   Index *find_index_by_field(const char *field_name) const;
-  bool is_field_in_index(std::vector<std::string> &field_names);
+  bool   is_field_in_index(std::vector<std::string> &field_names);
 
 private:
-  std::string base_dir_;
-  TableMeta   table_meta_;
-  DiskBufferPool *data_buffer_pool_ = nullptr;   /// 数据文件关联的buffer pool
-  RecordFileHandler *record_handler_ = nullptr;  /// 记录操作
+  std::string          base_dir_;
+  TableMeta            table_meta_;
+  DiskBufferPool      *data_buffer_pool_ = nullptr;  /// 数据文件关联的buffer pool
+  RecordFileHandler   *record_handler_   = nullptr;  /// 记录操作
   std::vector<Index *> indexes_;
 };

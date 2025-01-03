@@ -8,6 +8,7 @@ python3 miniob_test.py
 
 运行 basic 测试用例
 ```bash
+# pwd test/case
 python3 miniob_test.py --test-cases=basic
 ```
 
